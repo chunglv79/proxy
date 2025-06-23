@@ -32,7 +32,36 @@ sudo ufw allow 3128/tcp       # HTTP proxy
 sudo ufw allow 8388/tcp       # Shadowsocks
 sudo ufw --force enable
 
+apt update && apt install -y dante-server
 
+cat > /etc/danted.conf <<EOF
+logoutput: /var/log/danted.log
+internal: 0.0.0.0 port = 1080
+external: enX0
+method: username
+user.notprivileged: nobody
+
+client pass {
+    from: 0.0.0.0/0 to: 0.0.0.0/0
+    log: connect disconnect error
+}
+
+socks pass {
+    from: 0.0.0.0/0 to: 0.0.0.0/0
+    command: connect
+    log: connect disconnect error
+}
+EOF
+
+# Tạo user
+useradd -M -s /usr/sbin/nologin mrmeo
+echo "mrmeo:matkhau123" | chpasswd
+#set quyen file log
+sudo touch /var/log/danted.log
+sudo chmod 666 /var/log/danted.log
+# Bật Dante
+systemctl restart danted
+systemctl enable danted
 
 echo "🌐 Cấu hình dnscrypt-proxy sử dụng DNS $DNSCRYPT_SERVER_NAME trên cổng 5353..."
 DNSCONF="/etc/dnscrypt-proxy/dnscrypt-proxy.toml"
