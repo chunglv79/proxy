@@ -152,3 +152,4 @@ dig whoami.akamai.net @127.0.0.1 -p 5353 +short || echo "⚠️ DNS test failed!
 
 echo "🔥 Trạng thái tường lửa:"
 sudo ufw status verbose
+echo "__SCRIPT_DONE__"
