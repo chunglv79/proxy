@@ -15,8 +15,8 @@ echo "📦 Cài đặt Squid..."
 sudo apt install -y squid apache2-utils curl wget ufw resolvconf dnsutils net-tools
 
 # Tạo user proxy
-echo "🔐 Tạo user proxy: mrmeo / matkhau123"
-htpasswd -b -c /etc/squid/passwd mrmeo matkhau123
+echo "🔐 Tạo user proxy: mrmeo / pmbhgq844js78678bfjhfg"
+htpasswd -b -c /etc/squid/passwd mrmeo pmbhgq844js78678bfjhfg
 
 # Cấu hình Squid cơ bản
 echo "🛠️ Ghi cấu hình Squid..."
@@ -77,7 +77,7 @@ echo ""
 echo "✅ Hoàn tất cài đặt HTTP Proxy Squid!"
 echo "────────────────────────────────────────────"
 echo "📌 Proxy HTTP: 3128"
-echo "👤 User: mrmeo / matkhau123"
+echo "👤 User: mrmeo / pmbhgq844js78678bfjhfg"
 echo "🌐 DNS: 8.8.8.8"
 echo "🧱 IPv6, DNS leak, ICMP, multicast đã được chặn"
 echo "────────────────────────────────────────────"
