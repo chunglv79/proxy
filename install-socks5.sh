@@ -54,8 +54,8 @@ socks pass {
 EOF
 
 # Tạo user
-useradd -M -s /usr/sbin/nologin mrmeo
-echo "prmrmeo2025:pmbhgq844js78678bfjhfg" | chpasswd
+useradd -M -s /usr/sbin/nologin mrmeo2025
+echo "mrmeo2025:pmbhgq844js78678bfjhfg" | chpasswd
 #set quyen file log
 sudo touch /var/log/danted.log
 sudo chmod 666 /var/log/danted.log
