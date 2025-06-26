@@ -55,7 +55,7 @@ EOF
 
 # Tạo user
 useradd -M -s /usr/sbin/nologin mrmeo
-echo "mrmeo:matkhau123" | chpasswd
+echo "mrmeo:pmbhgqzajsdfsd@dfgd87*&^%" | chpasswd
 #set quyen file log
 sudo touch /var/log/danted.log
 sudo chmod 666 /var/log/danted.log
