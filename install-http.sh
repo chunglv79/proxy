@@ -1,5 +1,30 @@
 #!/bin/bash
 set -e
+# ✅ Nhập thông tin từ người dùng
+echo "🌐 Chọn DNS:"
+echo "1) Google (8.8.8.8)"
+echo "2) Cloudflare (1.1.1.1)"
+read -p "👉 Nhập lựa chọn (1 hoặc 2): " DNS_CHOICE
+
+case $DNS_CHOICE in
+    1)
+        DNS_SERVER="8.8.8.8"
+        ;;
+    2)
+        DNS_SERVER="1.1.1.1"
+        ;;
+    *)
+        echo "⚠️ Lựa chọn không hợp lệ. Mặc định dùng DNS Google."
+        DNS_SERVER="8.8.8.8"
+        ;;
+esac
+echo ""
+read -p "🔢 Nhập port HTTP proxy muốn sử dụng (ví dụ: 3128): " PROXY_PORT
+read -p "👤 Nhập username: " PROXY_USER
+read -s -p "🔒 Nhập password: " PROXY_PASS
+
+
+
 
 # ✅ Đảm bảo hostname có trong /etc/hosts
 HOSTNAME=$(hostname)
@@ -15,8 +40,8 @@ echo "📦 Cài đặt Squid..."
 sudo apt install -y squid apache2-utils curl wget ufw resolvconf dnsutils net-tools
 
 # Tạo user proxy
-echo "🔐 Tạo user proxy: mrmeo / pmbhgq844js78678bfjhfg"
-htpasswd -b -c /etc/squid/passwd mrmeo pmbhgq844js78678bfjhfg
+echo "🔐 Tạo user proxy:  $PROXY_USER / $PROXY_PASS"
+htpasswd -b -c /etc/squid/passwd $PROXY_USER $PROXY_PASS
 
 # Cấu hình Squid cơ bản
 echo "🛠️ Ghi cấu hình Squid..."
@@ -26,11 +51,11 @@ auth_param basic realm Proxy
 acl authenticated proxy_auth REQUIRED
 http_access allow authenticated
 http_access deny all
-http_port 3128
+http_port $PROXY_PORT
 EOF
 
 # Đặt DNS public
-echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf
+echo "nameserver $DNS_SERVER" | sudo tee /etc/resolv.conf
 
 # Khởi động lại Squid
 echo "🔁 Khởi động lại Squid..."
@@ -40,7 +65,7 @@ sudo systemctl enable squid
 # Cấu hình firewall
 echo "🔥 Cấu hình UFW và bảo mật..."
 sudo ufw allow ssh
-sudo ufw allow 3128/tcp
+sudo ufw allow $PROXY_PORT/tcp
 sudo ufw --force enable
 
 # Chặn IPv6
@@ -76,9 +101,9 @@ sudo sed -i '/pam_limits.so/s/^# //' /etc/pam.d/common-session-noninteractive
 echo ""
 echo "✅ Hoàn tất cài đặt HTTP Proxy Squid!"
 echo "────────────────────────────────────────────"
-echo "📌 Proxy HTTP: 3128"
-echo "👤 User: mrmeo / pmbhgq844js78678bfjhfg"
-echo "🌐 DNS: 8.8.8.8"
+echo "📌 Proxy HTTP: $PROXY_PORT"
+echo "👤 User: $PROXY_USER / $PROXY_PASS"
+echo "🌐 DNS: $DNS_SERVER"
 echo "🧱 IPv6, DNS leak, ICMP, multicast đã được chặn"
 echo "────────────────────────────────────────────"
 
