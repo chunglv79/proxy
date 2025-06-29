@@ -25,7 +25,7 @@ esac
 
 read -p "🔢 Nhập port SOCKS5 muốn sử dụng (ví dụ: 1080): " SOCKS5_PORT
 read -p "👤 Nhập username: " PROXY_USER
-read -s -p "🔒 Nhập password: " PROXY_PASS
+read -p "🔒 Nhập password: " PROXY_PASS
 echo ""
 
 # ✅ Đảm bảo hostname có trong /etc/hosts
