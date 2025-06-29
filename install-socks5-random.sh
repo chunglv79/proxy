@@ -42,10 +42,7 @@ sudo sysctl -p
 
 echo "🔥 Bật UFW và mở port cần thiết..."
 sudo ufw allow ssh
-sudo ufw allow 12345/tcp      # x-ui (Xray)
-sudo ufw allow 1080/tcp       # SOCKS5
-sudo ufw allow 3128/tcp       # HTTP proxy
-sudo ufw allow 8388/tcp       # Shadowsocks
+sudo ufw allow $SOCKS5_PORT/tcp       # SOCKS5
 sudo ufw --force enable
 
 read -p "🔢 Nhập port SOCKS5 muốn sử dụng (ví dụ: 1080): " SOCKS5_PORT
@@ -129,10 +126,10 @@ sudo sed -i '/pam_limits.so/s/^# //' /etc/pam.d/common-session
 sudo sed -i '/pam_limits.so/s/^# //' /etc/pam.d/common-session-noninteractive
 
 echo ""
-echo "✅ Hoàn tất cài đặt. Truy cập x-ui để cấu hình:"
+echo "✅ Hoàn tất cài đặt."
 echo "────────────────────────────────────────────"
 echo "🔑 Truy cập: http://<VPS_IP>:12345/"
-echo "📌 Port SOCKS5: 1080, HTTP: 3128, Shadowsocks: 8388"
+echo "📌 Port SOCKS5: $SOCKS5_PORT - User : $PROXY_USER - passwork : $PROXY_PASS"
 echo "🌍 DNS sử dụng: $DNSCRYPT_SERVER_NAME (127.0.0.1:5353)"
 echo "🧱 IPv6, DNS leak, ICMP, WebRTC đã bị chặn"
 echo "────────────────────────────────────────────"
