@@ -23,7 +23,7 @@ esac
 
 read -p "🔢 Nhập port HTTP proxy muốn sử dụng (ví dụ: 3128): " PROXY_PORT
 read -p "👤 Nhập username: " PROXY_USER
-read -s -p "🔒 Nhập password: " PROXY_PASS
+read -p "🔒 Nhập password: " PROXY_PASS
 echo ""
 
 # ✅ Đảm bảo hostname có trong /etc/hosts
