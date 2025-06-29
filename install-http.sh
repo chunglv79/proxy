@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+
 # ✅ Nhập thông tin từ người dùng
 echo "🌐 Chọn DNS:"
 echo "1) Google (8.8.8.8)"
@@ -18,13 +19,12 @@ case $DNS_CHOICE in
         DNS_SERVER="8.8.8.8"
         ;;
 esac
+
 echo ""
 read -p "🔢 Nhập port HTTP proxy muốn sử dụng (ví dụ: 3128): " PROXY_PORT
 read -p "👤 Nhập username: " PROXY_USER
 read -s -p "🔒 Nhập password: " PROXY_PASS
-
-
-
+echo ""
 
 # ✅ Đảm bảo hostname có trong /etc/hosts
 HOSTNAME=$(hostname)
@@ -40,8 +40,8 @@ echo "📦 Cài đặt Squid..."
 sudo apt install -y squid apache2-utils curl wget ufw resolvconf dnsutils net-tools
 
 # Tạo user proxy
-echo "🔐 Tạo user proxy:  $PROXY_USER / $PROXY_PASS"
-htpasswd -b -c /etc/squid/passwd $PROXY_USER $PROXY_PASS
+echo "🔐 Tạo user proxy: $PROXY_USER / $PROXY_PASS"
+sudo htpasswd -b -c /etc/squid/passwd "$PROXY_USER" "$PROXY_PASS"
 
 # Cấu hình Squid cơ bản
 echo "🛠️ Ghi cấu hình Squid..."
@@ -65,7 +65,7 @@ sudo systemctl enable squid
 # Cấu hình firewall
 echo "🔥 Cấu hình UFW và bảo mật..."
 sudo ufw allow ssh
-sudo ufw allow $PROXY_PORT/tcp
+sudo ufw allow "$PROXY_PORT"/tcp
 sudo ufw --force enable
 
 # Chặn IPv6
@@ -74,9 +74,9 @@ echo "net.ipv6.conf.all.disable_ipv6 = 1" | sudo tee -a /etc/sysctl.conf
 echo "net.ipv6.conf.default.disable_ipv6 = 1" | sudo tee -a /etc/sysctl.conf
 sudo sysctl -p
 
-# Chặn DNS leak nếu cần (có thể bỏ nếu không dùng DNS nội bộ)
-sudo iptables -A OUTPUT -p udp --dport 53 ! -d 8.8.8.8 -j REJECT
-sudo iptables -A OUTPUT -p tcp --dport 53 ! -d 8.8.8.8 -j REJECT
+# Chặn DNS leak
+sudo iptables -A OUTPUT -p udp --dport 53 ! -d "$DNS_SERVER" -j REJECT
+sudo iptables -A OUTPUT -p tcp --dport 53 ! -d "$DNS_SERVER" -j REJECT
 
 # Tắt ICMP
 sudo iptables -A INPUT -p icmp --icmp-type echo-request -j DROP
@@ -106,5 +106,4 @@ echo "👤 User: $PROXY_USER / $PROXY_PASS"
 echo "🌐 DNS: $DNS_SERVER"
 echo "🧱 IPv6, DNS leak, ICMP, multicast đã được chặn"
 echo "────────────────────────────────────────────"
-
 echo "__SCRIPT_DONE__"
