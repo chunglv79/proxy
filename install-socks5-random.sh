@@ -23,6 +23,11 @@ case $DNS_CHOICE in
         ;;
 esac
 
+read -p "🔢 Nhập port SOCKS5 muốn sử dụng (ví dụ: 1080): " SOCKS5_PORT
+read -p "👤 Nhập username: " PROXY_USER
+read -s -p "🔒 Nhập password: " PROXY_PASS
+echo ""
+
 # ✅ Đảm bảo hostname có trong /etc/hosts
 HOSTNAME=$(hostname)
 if ! grep -q "$HOSTNAME" /etc/hosts; then
@@ -45,10 +50,7 @@ sudo ufw allow ssh
 sudo ufw allow $SOCKS5_PORT/tcp       # SOCKS5
 sudo ufw --force enable
 
-read -p "🔢 Nhập port SOCKS5 muốn sử dụng (ví dụ: 1080): " SOCKS5_PORT
-read -p "👤 Nhập username: " PROXY_USER
-read -s -p "🔒 Nhập password: " PROXY_PASS
-echo ""
+
 
 apt update && apt install -y dante-server
 
