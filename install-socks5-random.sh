@@ -5,10 +5,15 @@ set -e
 # - Nhật Bản: jp.tiar.app-doh
 # - Hàn Quốc: kr.tiar.app-doh
 # - Brazil: br.tiar.app-doh
+# - Google: google.dns
+
 echo "🌐 Chọn DNS:"
 echo "1) Nhật Bản (jp.tiar.app-doh)"
 echo "2) Hàn Quốc (kr.tiar.app-doh)"
-read -p "👉 Nhập lựa chọn (1 hoặc 2): " DNS_CHOICE
+echo "3) Brazil (br.tiar.app-doh)"
+echo "4) Google (8.8.8.8)"
+
+read -p "👉 Nhập lựa chọn (1-4): " DNS_CHOICE
 
 case $DNS_CHOICE in
     1)
@@ -17,9 +22,15 @@ case $DNS_CHOICE in
     2)
         DNSCRYPT_SERVER_NAME="kr.tiar.app-doh"
         ;;
+    3)
+        DNSCRYPT_SERVER_NAME="br.tiar.app-doh"
+        ;;
+    4)
+        DNSCRYPT_SERVER_NAME="google.dns"
+        ;;
     *)
-        echo "⚠️ Lựa chọn không hợp lệ. Mặc định dùng DNS Nhật Bản."
-        DNSCRYPT_SERVER_NAME="jp.tiar.app-doh"
+        echo "⚠️ Lựa chọn không hợp lệ. Mặc định dùng DNS Google."
+        DNSCRYPT_SERVER_NAME="google.dns"
         ;;
 esac
 
