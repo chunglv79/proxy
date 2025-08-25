@@ -51,7 +51,7 @@ if [ "$CONFIG_MODE" == "2" ]; then
   SOCKS5_PORT=${SOCKS5_PORT:-25432}
   read -p "Nhập USERNAME cho proxy [user123]: " SOCKS5_USER
   SOCKS5_USER=${SOCKS5_USER:-user123}
-  read -s -p "Nhập PASSWORD cho proxy [Dian@123]: " SOCKS5_PASS
+  read -p "Nhập PASSWORD cho proxy [Dian@123]: " SOCKS5_PASS
   echo
   SOCKS5_PASS=${SOCKS5_PASS:-Dian@123}
 
