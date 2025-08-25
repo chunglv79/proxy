@@ -145,6 +145,8 @@ rm -f \$0
 EOF
 
   chmod +x install_socks5.sh
+  echo "⏳ Chờ 30s cho $name boot xong SSH..."
+  sleep 30
   gcloud compute scp install_socks5.sh "$name":~/install_socks5.sh --zone="$ZONE" --quiet
   gcloud compute ssh "$name" --zone="$ZONE" --command="sudo bash ~/install_socks5.sh" < /dev/null
   rm -f install_socks5.sh
