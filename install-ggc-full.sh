@@ -92,7 +92,8 @@ for ((i=1; i<=VPS_COUNT; i++)); do
     --boot-disk-type=pd-ssd \
     --quiet
 done
-
+echo "⏳ Chờ 30s cho VPS boot xong SSH..."
+  sleep 30
 # ====== BƯỚC 3: CÀI FILE VÀ CẤU HÌNH SOCKS5 ======
 for ((i=1; i<=VPS_COUNT; i++)); do
   name="${BASE_NAME}-${i}"
@@ -144,9 +145,7 @@ echo "✓ SOCKS5 proxy running on: socks5://\$EXT_IP:\$SOCKS5_PORT:\$SOCKS5_USER
 rm -f \$0
 EOF
 
-  chmod +x install_socks5.sh
-  echo "⏳ Chờ 30s cho $name boot xong SSH..."
-  sleep 30
+  chmod +x install_socks5.sh  
   gcloud compute scp install_socks5.sh "$name":~/install_socks5.sh --zone="$ZONE" --quiet
   gcloud compute ssh "$name" --zone="$ZONE" --command="sudo bash ~/install_socks5.sh" < /dev/null
   rm -f install_socks5.sh
