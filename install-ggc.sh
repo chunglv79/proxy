@@ -102,11 +102,16 @@ for ((i=1; i<=VPS_COUNT; i++)); do
   pass="${PASSES[$((i-1))]}"
 
   echo "📦 Cài SOCKS5 trên $name (zone: $ZONE, port: $port, user: $user) ..."
+  # Nếu zone là 7,8,9 thì chọn DNS option 2, còn lại là 1
+  case "$ZONE" in
+    *7|*8|*9) dns_option=2 ;;
+    *) dns_option=1 ;;
+  esac
 
   gcloud compute ssh "$name" --zone="$ZONE" --command "
     wget -O install-socks5.sh https://raw.githubusercontent.com/chunglv79/proxy/main/install-socks5-random-ggc.sh &&
     chmod +x install-socks5.sh &&
-    echo -e \"1\n$port\n$user\n$pass\" | sudo ./install-socks5.sh
+    echo -e \"$dns_option\n$port\n$user\n$pass\" | sudo ./install-socks5.sh
   "
 done
 
