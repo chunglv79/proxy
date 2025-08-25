@@ -54,10 +54,13 @@ sudo ufw --force enable
 
 apt update && apt install -y dante-server
 
+# Lấy interface mặc định (gateway default)
+EXT_IF=$(ip route | awk '/default/ {print $5; exit}')
+
 cat > /etc/danted.conf <<EOF
 logoutput: /var/log/danted.log
 internal: 0.0.0.0 port = $SOCKS5_PORT
-external: ens4
+external: ${EXT_IF}
 method: username
 user.notprivileged: nobody
 
