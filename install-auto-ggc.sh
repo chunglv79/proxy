@@ -97,6 +97,16 @@ create_vps_group() {
 echo "⏳ Chờ 30s cho VPS boot..."
 sleep 30
 
+# Tạo SSH key nếu chưa có
+if [ ! -f ~/.ssh/google_compute_engine ]; then
+    ssh-keygen -t rsa -b 4096 -f ~/.ssh/google_compute_engine -N ""
+fi
+
+# Add key vào Google Cloud OS Login nếu chưa tồn tại
+if ! gcloud compute os-login ssh-keys list --format="value(key)" | grep -q "$(cat ~/.ssh/google_compute_engine.pub)"; then
+    gcloud compute os-login ssh-keys add --key-file ~/.ssh/google_compute_engine.pub
+fi
+
 # ====== CÀI SOCKS5 ======
 index=0
 install_socks5_group() {
