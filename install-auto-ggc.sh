@@ -137,11 +137,22 @@ install_socks5_group() {
 # ====== IN DANH SÁCH PROXY ======
 echo ""
 echo "================ SOCKS5 PROXY LIST ================"
+
 index=0
 for ((i=1; i<=TOTAL; i++)); do
-  index=$((index+1))
-  ip=$(gcloud compute instances describe "${BASE_NAME}-${index}" \
-    --zone="$( [ $index -le $TOKYO ] && echo asia-northeast1-c || [ $index -le $((TOKYO+OSAKA)) ] && echo asia-northeast2-a || echo asia-northeast3-a )" \
-    --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
-  echo "${ip}:${PORTS[$((index-1))]}:${USERS[$((index-1))]}:${PASSES[$((index-1))]}"
+    index=$((index+1))
+
+    if [ $index -le $TOKYO ]; then
+        zone="asia-northeast1-c"
+    elif [ $index -le $((TOKYO+OSAKA)) ]; then
+        zone="asia-northeast2-a"
+    else
+        zone="asia-northeast3-a"
+    fi
+
+    ip=$(gcloud compute instances describe "${BASE_NAME}-${index}" \
+        --zone="$zone" \
+        --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
+
+    echo "${ip}:${PORTS[$((index-1))]}:${USERS[$((index-1))]}:${PASSES[$((index-1))]}"
 done
