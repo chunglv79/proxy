@@ -90,7 +90,7 @@ create_vps_group() {
   done
 }
 
-[ $TOKYO -gt 0 ] && create_vps_group $TOKYO "asia-northeast1-a" "Tokyo"
+[ $TOKYO -gt 0 ] && create_vps_group $TOKYO "asia-northeast1-c" "Tokyo"
 [ $OSAKA -gt 0 ] && create_vps_group $OSAKA "asia-northeast2-a" "Osaka"
 [ $SEOUL -gt 0 ] && create_vps_group $SEOUL "asia-northeast3-a" "Seoul"
 
@@ -130,7 +130,7 @@ install_socks5_group() {
   done
 }
 
-[ $TOKYO -gt 0 ] && install_socks5_group $TOKYO "asia-northeast1-a" 1
+[ $TOKYO -gt 0 ] && install_socks5_group $TOKYO "asia-northeast1-c" 1
 [ $OSAKA -gt 0 ] && install_socks5_group $OSAKA "asia-northeast2-a" 1
 [ $SEOUL -gt 0 ] && install_socks5_group $SEOUL "asia-northeast3-a" 2
 
