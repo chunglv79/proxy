@@ -5,8 +5,8 @@
 
 BASE_NAME="mrmeoproxy"
 MACHINE_TYPE="e2-micro"
-IMAGE_PROJECT="debian-cloud"
-IMAGE_FAMILY="debian-11"
+IMAGE_PROJECT="ubuntu-os-cloud"
+IMAGE_FAMILY="ubuntu-minimal-2204-lts"
 
 declare -a PORTS USERS PASSES
 
@@ -55,8 +55,7 @@ gcloud compute firewall-rules create "${BASE_NAME}-open-port-proxy" \
   --source-ranges=0.0.0.0/0 \
   --quiet || echo "⚠️ Firewall rule đã tồn tại"
 
-echo "⏳ Chờ 30s cho VPS boot..."
-sleep 30
+
 
 # ==== SSH KEY ====
 if [ ! -f ~/.ssh/google_compute_engine ]; then
@@ -85,6 +84,8 @@ create_vps_group() {
       --tags=socks5-proxy \
       --quiet &
   done
+   # Đợi tất cả lệnh nền hoàn tất
+  wait
 }
 
 # ====== HÀM CÀI SOCKS5 ======
@@ -96,7 +97,7 @@ install_socks5_group() {
   local start_index=$5
 
   for ((i=1; i<=COUNT; i++)); do
-    idx=$((start + i))
+    idx=$((start_index + i))
     name="${BASE_NAME}-${PREFIX}-${i}"
     port="${PORTS[$((idx-1))]}"
     user="${USERS[$((idx-1))]}"
@@ -109,6 +110,8 @@ install_socks5_group() {
       echo -e \"$DNS_OPTION\n$port\n$user\n$pass\" | sudo ./install-socks5.sh
     " &
   done
+   # Đợi tất cả lệnh nền hoàn tất
+  wait
 }
 
 # ====== BẮT ĐẦU TẠO VPS ======
@@ -119,7 +122,8 @@ echo "🚀 Đang tạo VPS..."
 
 wait
 echo "✅ Tạo VPS xong!"
-
+echo "⏳ Chờ 30s cho VPS boot..."
+sleep 30
 # ====== CÀI SOCKS5 ======
 echo "🚀 Bắt đầu cài SOCKS5..."
 start=0
