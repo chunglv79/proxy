@@ -88,6 +88,8 @@ create_vps_group() {
       --boot-disk-type=pd-ssd \
       --quiet
   done
+  # Đợi tất cả lệnh nền hoàn tất
+  wait
 }
 
 [ $TOKYO -gt 0 ] && create_vps_group $TOKYO "asia-northeast1-c" "Tokyo"
