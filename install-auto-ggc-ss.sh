@@ -3,28 +3,69 @@
 # Script tạo & cài SOCKS5 trên GCP (Tokyo / Osaka / Seoul)
 # ======================================
 
-# ==== THÔNG SỐ CƠ BẢN ====
 BASE_NAME="mrmeoproxy"
 MACHINE_TYPE="e2-micro"
 IMAGE_PROJECT="debian-cloud"
 IMAGE_FAMILY="debian-11"
-PORTS=()
-USERS=()
-PASSES=()
+
+declare -a PORTS USERS PASSES
 
 # ==== NHẬP SỐ VPS ====
 read -p "Số VPS Tokyo: " TOKYO
 read -p "Số VPS Osaka: " OSAKA
 read -p "Số VPS Seoul: " SEOUL
-
 TOTAL=$((TOKYO + OSAKA + SEOUL))
 
-# ==== RANDOM PORT/USER/PASS ====
-for ((i=1; i<=TOTAL; i++)); do
-  PORTS+=($((10000 + RANDOM % 50000)))
-  USERS+=("mrmeo${RANDOM:0:5}")
-  PASSES+=("pw${RANDOM:0:8}")
-done
+# ==== CHỌN MODE AUTO/MANUAL ====
+echo "Chọn chế độ cấu hình proxy:"
+echo "1) Auto (random port + user + pass)"
+echo "2) Manual (tự nhập port + user + pass)"
+read -p "Lựa chọn [1/2]: " CONFIG_MODE
+CONFIG_MODE=${CONFIG_MODE:-1}
+
+if [ "$CONFIG_MODE" == "2" ]; then
+  read -p "Nhập PORT cho SOCKS5 proxy [0-65535]: " SOCKS5_PORT
+  SOCKS5_PORT=${SOCKS5_PORT:-1099}
+  read -p "Nhập USERNAME cho proxy [mrmeo2025]: " SOCKS5_USER
+  SOCKS5_USER=${SOCKS5_USER:-mrmeo2025}
+  read -p "Nhập PASSWORD cho proxy [pmbhgq844js78678bfjhfg]: " SOCKS5_PASS
+  SOCKS5_PASS=${SOCKS5_PASS:-pmbhgq844js78678bfjhfg}
+
+  for ((i=1; i<=TOTAL; i++)); do
+    PORTS+=("$SOCKS5_PORT")
+    USERS+=("$SOCKS5_USER")
+    PASSES+=("$SOCKS5_PASS")
+  done
+else
+  for ((i=1; i<=TOTAL; i++)); do
+    PORTS+=("$((RANDOM % 10000 + 20000))")
+    USERS+=("user$((RANDOM % 9000 + 1000))")
+    PASSES+=("pass$((RANDOM % 9000 + 1000))")
+  done
+fi
+
+# ==== FIREWALL MỞ PORT ====
+PORT_LIST=$(printf "tcp:%s," "${PORTS[@]}")
+PORT_LIST=${PORT_LIST%,}
+gcloud compute firewall-rules create "${BASE_NAME}-open-port-proxy" \
+  --allow="$PORT_LIST" \
+  --description="Allow SOCKS5 proxy ports" \
+  --direction=INGRESS \
+  --priority=1000 \
+  --source-ranges=0.0.0.0/0 \
+  --quiet || echo "⚠️ Firewall rule đã tồn tại"
+
+echo "⏳ Chờ 30s cho VPS boot..."
+sleep 30
+
+# ==== SSH KEY ====
+if [ ! -f ~/.ssh/google_compute_engine ]; then
+    ssh-keygen -t rsa -b 4096 -f ~/.ssh/google_compute_engine -N ""
+fi
+
+if ! gcloud compute os-login ssh-keys list --format="value(key)" | grep -q "$(cat ~/.ssh/google_compute_engine.pub)"; then
+    gcloud compute os-login ssh-keys add --key-file ~/.ssh/google_compute_engine.pub
+fi
 
 # ====== HÀM TẠO VPS ======
 create_vps_group() {
@@ -55,7 +96,7 @@ install_socks5_group() {
   local start_index=$5
 
   for ((i=1; i<=COUNT; i++)); do
-    idx=$((start_index + i))
+    idx=$((start + i))
     name="${BASE_NAME}-${PREFIX}-${i}"
     port="${PORTS[$((idx-1))]}"
     user="${USERS[$((idx-1))]}"
@@ -79,18 +120,16 @@ echo "🚀 Đang tạo VPS..."
 wait
 echo "✅ Tạo VPS xong!"
 
-# ====== CÀI SOCKS5 TRÊN VPS ======
+# ====== CÀI SOCKS5 ======
 echo "🚀 Bắt đầu cài SOCKS5..."
-
 start=0
 [ $TOKYO -gt 0 ] && install_socks5_group $TOKYO "asia-northeast1-c" "tokyo" 1 $start && start=$((start+TOKYO))
 [ $OSAKA -gt 0 ] && install_socks5_group $OSAKA "asia-northeast2-a" "osaka" 1 $start && start=$((start+OSAKA))
 [ $SEOUL -gt 0 ] && install_socks5_group $SEOUL "asia-northeast3-a" "seoul" 2 $start && start=$((start+SEOUL))
-
 wait
 echo "✅ Cài SOCKS5 hoàn tất!"
 
-# ====== IN DANH SÁCH SOCKS5 ======
+# ====== IN DANH SÁCH ======
 echo "================ SOCKS5 PROXY LIST ================"
 start=0
 for zone in "tokyo:$TOKYO:asia-northeast1-c" "osaka:$OSAKA:asia-northeast2-a" "seoul:$SEOUL:asia-northeast3-a"; do
