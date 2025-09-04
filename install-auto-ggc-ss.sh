@@ -39,11 +39,13 @@ declare -a PORTS USERS PASSES
 
 if [ "$CONFIG_MODE" == "2" ]; then
   read -p "Nhập PORT cho SOCKS5 proxy [0-65535]: " SOCKS5_PORT
-  SOCKS5_PORT=${SOCKS5_PORT:-1099}
+  SOCKS5_PORT=${SOCKS5_PORT:-25432}
   read -p "Nhập USERNAME cho proxy [mrmeo2025]: " SOCKS5_USER
   SOCKS5_USER=${SOCKS5_USER:-mrmeo2025}
   read -p "Nhập PASSWORD cho proxy [pmbhgq844js78678bfjhfg]: " SOCKS5_PASS
   SOCKS5_PASS=${SOCKS5_PASS:-pmbhgq844js78678bfjhfg}
+else
+  echo "⚠️ CONFIG_MODE khác 2, bỏ qua cấu hình thủ công."
 fi
 
   for ((i=1; i<=TOTAL; i++)); do
