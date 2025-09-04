@@ -34,11 +34,12 @@ if ! grep -q "$HOSTNAME" /etc/hosts; then
     echo "127.0.0.1 $HOSTNAME" | sudo tee -a /etc/hosts
 fi
 
-echo "📦 Đang cập nhật hệ thống..."
-sudo apt update && sudo apt upgrade -y
+echo "📦 Cập nhật danh sách package..."
+sudo apt-get update -y
 
-echo "📥 Cài UFW, dnscrypt-proxy và tiện ích cần thiết..."
-sudo apt install -y curl wget ufw resolvconf dnsutils net-tools dnscrypt-proxy
+echo "📥 Cài UFW, dnscrypt-proxy, Dante SOCKS5..."
+sudo apt-get install -y --no-install-recommends \
+    ufw dnscrypt-proxy dante-server curl wget net-tools dnsutils
 
 echo "🧱 Chặn IPv6 để tránh rò rỉ..."
 echo "net.ipv6.conf.all.disable_ipv6 = 1" | sudo tee -a /etc/sysctl.conf
@@ -50,9 +51,6 @@ sudo ufw allow ssh
 sudo ufw allow $SOCKS5_PORT/tcp       # SOCKS5
 sudo ufw --force enable
 
-
-
-apt update && apt install -y dante-server
 
 # Lấy interface mặc định (gateway default)
 EXT_IF=$(ip route | awk '/default/ {print $5; exit}')
