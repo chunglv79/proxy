@@ -57,7 +57,6 @@ else
     PASSES+=("pass$((RANDOM % 9000 + 1000))")
   done
 fi
-
 # ====== MỞ FIREWALL ======
 PORT_LIST=$(printf "tcp:%s," "${PORTS[@]}")
 PORT_LIST=${PORT_LIST%,}
