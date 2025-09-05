@@ -3,7 +3,8 @@
 # Script tạo & cài SOCKS5 trên GCP (Tokyo / Osaka / Seoul)
 # ======================================
 
-BASE_NAME="mrmeoproxy"
+read -p "👉 Nhập BASE_NAME cho VPS (mặc định: mrmeoproxy): " BASE_NAME
+BASE_NAME=${BASE_NAME:-mrmeoproxy}
 MACHINE_TYPE="e2-micro"
 IMAGE_PROJECT="ubuntu-os-cloud"
 IMAGE_FAMILY="ubuntu-minimal-2204-lts"
