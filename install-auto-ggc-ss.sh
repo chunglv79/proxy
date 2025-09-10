@@ -45,16 +45,23 @@ else
   done
 fi
 
-# ==== FIREWALL MỞ PORT ====
-PORT_LIST=$(printf "tcp:%s," "${PORTS[@]}")
-PORT_LIST=${PORT_LIST%,}
-gcloud compute firewall-rules create "${BASE_NAME}-open-port-proxy" \
-  --allow="$PORT_LIST" \
-  --description="Allow SOCKS5 proxy ports" \
+# ==== NETWORK + FIREWALL ====
+NET_NAME="${BASE_NAME}-network"
+
+# Tạo network riêng nếu chưa có
+gcloud compute networks create "$NET_NAME" --subnet-mode=auto --quiet || echo "⚠️ Network $NET_NAME đã tồn tại, bỏ qua."
+
+# Xóa firewall rule cũ (nếu có)
+gcloud compute firewall-rules delete "${BASE_NAME}-allow-all" --quiet || true
+
+# Tạo firewall rule ALL-INBOUND (toàn quyền)
+gcloud compute firewall-rules create "${BASE_NAME}-allow-all" \
+  --network="$NET_NAME" \
+  --allow=tcp,udp,icmp \
   --direction=INGRESS \
   --priority=1000 \
   --source-ranges=0.0.0.0/0 \
-  --quiet || echo "⚠️ Firewall rule đã tồn tại"
+  --quiet
 
 
 
@@ -82,6 +89,7 @@ create_vps_group() {
       --image-family="$IMAGE_FAMILY" \
       --image-project="$IMAGE_PROJECT" \
       --boot-disk-size=10GB \
+      --network="$NET_NAME" \
       --tags=socks5-proxy \
       --quiet &
   done
