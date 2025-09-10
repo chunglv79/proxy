@@ -63,7 +63,10 @@ gcloud compute firewall-rules create "${BASE_NAME}-allow-all" \
   --source-ranges=0.0.0.0/0 \
   --quiet
 
-
+while ! gcloud compute networks describe "$NET_NAME" --format="value(selfLink)" >/dev/null 2>&1; do
+  echo "⏳ Network $NET_NAME chưa ready, chờ 5s..."
+  sleep 5
+done
 
 # ==== SSH KEY ====
 if [ ! -f ~/.ssh/google_compute_engine ]; then
