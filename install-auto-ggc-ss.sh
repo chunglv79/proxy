@@ -47,21 +47,29 @@ fi
 
 # ==== NETWORK + FIREWALL ====
 NET_NAME="${BASE_NAME}-network"
+FIREWALL_NAME="${BASE_NAME}-allow-all"
 
 # Tạo network riêng nếu chưa có
-gcloud compute networks create "$NET_NAME" --subnet-mode=auto --quiet || echo "⚠️ Network $NET_NAME đã tồn tại, bỏ qua."
+if ! gcloud compute networks describe "$NET_NAME" >/dev/null 2>&1; then
+  echo "🌐 Network $NET_NAME chưa có, đang tạo..."
+  gcloud compute networks create "$NET_NAME" --subnet-mode=auto --quiet
+else
+  echo "⚠️ Network $NET_NAME đã tồn tại, bỏ qua."
+fi
 
-# Xóa firewall rule cũ (nếu có)
-gcloud compute firewall-rules delete "${BASE_NAME}-allow-all" --quiet || true
-
-# Tạo firewall rule ALL-INBOUND (toàn quyền)
-gcloud compute firewall-rules create "${BASE_NAME}-allow-all" \
-  --network="$NET_NAME" \
-  --allow=tcp,udp,icmp \
-  --direction=INGRESS \
-  --priority=1000 \
-  --source-ranges=0.0.0.0/0 \
-  --quiet
+# Tạo firewall rule nếu chưa có
+if ! gcloud compute firewall-rules describe "$FIREWALL_NAME" >/dev/null 2>&1; then
+  echo "🛡️ Firewall rule $FIREWALL_NAME chưa có, đang tạo..."
+  gcloud compute firewall-rules create "$FIREWALL_NAME" \
+    --network="$NET_NAME" \
+    --allow=tcp,udp,icmp \
+    --direction=INGRESS \
+    --priority=1000 \
+    --source-ranges=0.0.0.0/0 \
+    --quiet
+else
+  echo "⚠️ Firewall rule $FIREWALL_NAME đã tồn tại, bỏ qua."
+fi
 
 while ! gcloud compute networks describe "$NET_NAME" --format="value(selfLink)" >/dev/null 2>&1; do
   echo "⏳ Network $NET_NAME chưa ready, chờ 5s..."
