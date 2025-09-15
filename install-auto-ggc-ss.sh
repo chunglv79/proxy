@@ -1,6 +1,7 @@
 #!/bin/bash
 # ======================================
 # Script tạo & cài SOCKS5 trên GCP (Tokyo / Osaka / Seoul)
+# Sequential version (không chạy song song)
 # ======================================
 
 read -p "👉 Nhập BASE_NAME cho VPS (mặc định: mrmeoproxy): " BASE_NAME
@@ -12,9 +13,15 @@ IMAGE_FAMILY="ubuntu-minimal-2204-lts"
 declare -a PORTS USERS PASSES
 
 # ==== NHẬP SỐ VPS ====
-read -p "Số VPS Tokyo: " TOKYO
-read -p "Số VPS Osaka: " OSAKA
-read -p "Số VPS Seoul: " SEOUL
+read -p "Số VPS Tokyo [0]: " TOKYO
+TOKYO=${TOKYO:-0}
+
+read -p "Số VPS Osaka [0]: " OSAKA
+OSAKA=${OSAKA:-0}
+
+read -p "Số VPS Seoul [0]: " SEOUL
+SEOUL=${SEOUL:-0}
+
 TOTAL=$((TOKYO + OSAKA + SEOUL))
 
 # ==== CHỌN MODE AUTO/MANUAL ====
@@ -85,31 +92,8 @@ if ! gcloud compute os-login ssh-keys list --format="value(key)" | grep -q "$(ca
     gcloud compute os-login ssh-keys add --key-file ~/.ssh/google_compute_engine.pub
 fi
 
-# ====== HÀM TẠO VPS ======
-create_vps_group() {
-  local COUNT=$1
-  local ZONE=$2
-  local PREFIX=$3
-
-  for ((i=1; i<=COUNT; i++)); do
-    name="${BASE_NAME}-${PREFIX}-${i}"
-    echo "🚀 Tạo VPS $name ($ZONE)"
-    gcloud compute instances create "$name" \
-      --zone="$ZONE" \
-      --machine-type="$MACHINE_TYPE" \
-      --image-family="$IMAGE_FAMILY" \
-      --image-project="$IMAGE_PROJECT" \
-      --boot-disk-size=10GB \
-      --network="$NET_NAME" \
-      --tags=socks5-proxy \
-      --quiet &
-  done
-   # Đợi tất cả lệnh nền hoàn tất
-  wait
-}
-
-# ====== HÀM CÀI SOCKS5 ======
-install_socks5_group() {
+# ====== HÀM TẠO + CÀI VPS ======
+setup_vps_group() {
   local COUNT=$1
   local ZONE=$2
   local PREFIX=$3
@@ -123,35 +107,37 @@ install_socks5_group() {
     user="${USERS[$((idx-1))]}"
     pass="${PASSES[$((idx-1))]}"
 
+    echo "🚀 Tạo VPS $name ($ZONE)"
+    gcloud compute instances create "$name" \
+      --zone="$ZONE" \
+      --machine-type="$MACHINE_TYPE" \
+      --image-family="$IMAGE_FAMILY" \
+      --image-project="$IMAGE_PROJECT" \
+      --boot-disk-size=10GB \
+      --network="$NET_NAME" \
+      --tags=socks5-proxy \
+      --quiet
+
+    echo "⏳ Chờ 20s cho $name boot..."
+    sleep 20
+
     echo "📦 Cài SOCKS5 trên $name ($ZONE, port: $port, user: $user)"
     gcloud compute ssh "$name" --zone="$ZONE" --command "
       wget -O install-socks5.sh https://raw.githubusercontent.com/chunglv79/proxy/main/install-socks5-random-ggc.sh &&
       chmod +x install-socks5.sh &&
       echo -e \"$DNS_OPTION\n$port\n$user\n$pass\" | sudo ./install-socks5.sh
-    " &
+    "
   done
-   # Đợi tất cả lệnh nền hoàn tất
-  wait
 }
 
-# ====== BẮT ĐẦU TẠO VPS ======
-echo "🚀 Đang tạo VPS..."
-[ $TOKYO -gt 0 ] && create_vps_group $TOKYO "asia-northeast1-c" "tokyo"
-[ $OSAKA -gt 0 ] && create_vps_group $OSAKA "asia-northeast2-a" "osaka"
-[ $SEOUL -gt 0 ] && create_vps_group $SEOUL "asia-northeast3-a" "seoul"
-
-wait
-echo "✅ Tạo VPS xong!"
-echo "⏳ Chờ 30s cho VPS boot..."
-sleep 30
-# ====== CÀI SOCKS5 ======
-echo "🚀 Bắt đầu cài SOCKS5..."
+# ====== BẮT ĐẦU TẠO + CÀI VPS ======
+echo "🚀 Bắt đầu tạo và cài SOCKS5 tuần tự..."
 start=0
-[ $TOKYO -gt 0 ] && install_socks5_group $TOKYO "asia-northeast1-c" "tokyo" 1 $start && start=$((start+TOKYO))
-[ $OSAKA -gt 0 ] && install_socks5_group $OSAKA "asia-northeast2-a" "osaka" 1 $start && start=$((start+OSAKA))
-[ $SEOUL -gt 0 ] && install_socks5_group $SEOUL "asia-northeast3-a" "seoul" 2 $start && start=$((start+SEOUL))
-wait
-echo "✅ Cài SOCKS5 hoàn tất!"
+[ $TOKYO -gt 0 ] && setup_vps_group $TOKYO "asia-northeast1-c" "tokyo" 1 $start && start=$((start+TOKYO))
+[ $OSAKA -gt 0 ] && setup_vps_group $OSAKA "asia-northeast2-a" "osaka" 1 $start && start=$((start+OSAKA))
+[ $SEOUL -gt 0 ] && setup_vps_group $SEOUL "asia-northeast3-a" "seoul" 2 $start && start=$((start+SEOUL))
+
+echo "✅ Hoàn tất cài SOCKS5!"
 
 # ====== IN DANH SÁCH ======
 echo "================ SOCKS5 PROXY LIST ================"
