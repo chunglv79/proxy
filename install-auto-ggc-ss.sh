@@ -1,7 +1,6 @@
 #!/bin/bash
 # ======================================
-# Script tạo & cài SOCKS5 trên GCP (Tokyo / Osaka / Seoul)
-# Sequential version (không chạy song song)
+# Script tạo & cài SOCKS5 trên GCP (Tokyo / Osaka / Seoul) by mrmeo 0974579468
 # ======================================
 
 read -p "👉 Nhập BASE_NAME cho VPS (mặc định: mrmeoproxy): " BASE_NAME
@@ -13,13 +12,13 @@ IMAGE_FAMILY="ubuntu-minimal-2204-lts"
 declare -a PORTS USERS PASSES
 
 # ==== NHẬP SỐ VPS ====
-read -p "Số VPS Tokyo [0]: " TOKYO
+read -p "Số VPS Tokyo [mặc định 0]: " TOKYO
 TOKYO=${TOKYO:-0}
 
-read -p "Số VPS Osaka [0]: " OSAKA
+read -p "Số VPS Osaka [mặc định 0]: " OSAKA
 OSAKA=${OSAKA:-0}
 
-read -p "Số VPS Seoul [0]: " SEOUL
+read -p "Số VPS Seoul [mặc định 0]: " SEOUL
 SEOUL=${SEOUL:-0}
 
 TOTAL=$((TOKYO + OSAKA + SEOUL))
@@ -28,8 +27,8 @@ TOTAL=$((TOKYO + OSAKA + SEOUL))
 echo "Chọn chế độ cấu hình proxy:"
 echo "1) Auto (random port + user + pass)"
 echo "2) Manual (tự nhập port + user + pass)"
-read -p "Lựa chọn [1/2]: " CONFIG_MODE
-CONFIG_MODE=${CONFIG_MODE:-1}
+read -p "Lựa chọn [1/2] mặc định là 2: " CONFIG_MODE
+CONFIG_MODE=${CONFIG_MODE:-2}
 
 if [ "$CONFIG_MODE" == "2" ]; then
   read -p "Nhập PORT cho SOCKS5 proxy [0-65535]: " SOCKS5_PORT
@@ -175,6 +174,7 @@ echo "✅ Hoàn tất cài SOCKS5!"
 
 # ====== IN DANH SÁCH ======
 echo "================ SOCKS5 PROXY LIST ================"
+echo "================ Script by Mrmeo - 0974579468  ================"
 start=0
 for zone in "tokyo:$TOKYO:asia-northeast1-c" "osaka:$OSAKA:asia-northeast2-a" "seoul:$SEOUL:asia-northeast3-a"; do
   IFS=":" read -r PREFIX COUNT ZONE <<< "$zone"
@@ -186,4 +186,5 @@ for zone in "tokyo:$TOKYO:asia-northeast1-c" "osaka:$OSAKA:asia-northeast2-a" "s
   done
   start=$((start+COUNT))
 done
+echo "==================== Hoàn tất cài đặt  ==========================="
 echo "==================================================="
