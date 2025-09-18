@@ -136,8 +136,8 @@ install_socks5_group() {
           --zone "$ZONE" \
           --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
 
-    # Check SSH tối đa 3 phút
-    for j in {1..90}; do
+    # Check SSH tối đa 1 phút
+    for ((j=1; j<=30; j++)); do
       if nc -z "$IP" 22 &>/dev/null; then
         echo "✅ SSH OK trên $name ($IP)"
         break
