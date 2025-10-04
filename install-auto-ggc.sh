@@ -1,48 +1,42 @@
 #!/bin/bash
+# ======================================
+# Script tạo & cài SOCKS5 trên GCP (Tokyo / Osaka / Seoul) by mrmeo 0974579468
+# ======================================
 
-# ====== SCRIPT TẠO NHIỀU VPS PROXY NHANH ======
+read -p "👉 Nhập BASE_NAME cho VPS (mặc định: mrmeoproxy): " BASE_NAME
+BASE_NAME=${BASE_NAME:-mrmeoproxy}
+MACHINE_TYPE="e2-micro"
+IMAGE_PROJECT="ubuntu-os-cloud"
+IMAGE_FAMILY="ubuntu-minimal-2204-lts"
 
-read -p "Nhập tên cho VPS [NAME]: " BASE_NAME
-BASE_NAME=${BASE_NAME:-proxy}
+declare -a PORTS USERS PASSES
 
+# ==== NHẬP SỐ VPS ====
+read -p "Số VPS Tokyo [mặc định 0]: " TOKYO
+TOKYO=${TOKYO:-0}
+
+read -p "Số VPS Osaka [mặc định 0]: " OSAKA
+OSAKA=${OSAKA:-0}
+
+read -p "Số VPS Seoul [mặc định 0]: " SEOUL
+SEOUL=${SEOUL:-0}
+
+TOTAL=$((TOKYO + OSAKA + SEOUL))
+
+# ==== CHỌN MODE AUTO/MANUAL ====
 echo "Chọn chế độ cấu hình proxy:"
 echo "1) Auto (random port + user + pass)"
 echo "2) Manual (tự nhập port + user + pass)"
-read -p "Lựa chọn [1/2]: " CONFIG_MODE
-CONFIG_MODE=${CONFIG_MODE:-1}
-
-echo "📦 Chọn mục thường tạo:"
-echo "1) 4 Tokyo , 4 Osaka , 0 Seoul"
-echo "2) 8 Tokyo , 8 Osaka , 0 Seoul"
-echo "3) 0 Tokyo , 0 Osaka , 4 Seoul"
-echo "4) 0 Tokyo , 0 Osaka , 8 Seoul"
-echo "5) 4 Tokyo , 4 Osaka , 4 Seoul"
-echo "6) 8 Tokyo , 8 Osaka , 8 Seoul"
-read -p "Chọn số [1-6]: " PRESET
-
-case $PRESET in
-  1) TOKYO=4; OSAKA=4; SEOUL=0 ;;
-  2) TOKYO=8; OSAKA=8; SEOUL=0 ;;
-  3) TOKYO=0; OSAKA=0; SEOUL=4 ;;
-  4) TOKYO=0; OSAKA=0; SEOUL=8 ;;
-  5) TOKYO=4; OSAKA=4; SEOUL=4 ;;
-  6) TOKYO=8; OSAKA=8; SEOUL=8 ;;
-  *) TOKYO=4; OSAKA=4; SEOUL=0 ;;
-esac
-
-TOTAL=$((TOKYO + OSAKA + SEOUL))
-echo "➡️ Sẽ tạo: $TOKYO Tokyo, $OSAKA Osaka, $SEOUL Seoul (Tổng: $TOTAL VPS)"
-
-# ====== TẠO DANH SÁCH PORT/USER/PASS ======
-declare -a PORTS USERS PASSES
+read -p "Lựa chọn [1/2] mặc định là 2: " CONFIG_MODE
+CONFIG_MODE=${CONFIG_MODE:-2}
 
 if [ "$CONFIG_MODE" == "2" ]; then
   read -p "Nhập PORT cho SOCKS5 proxy [0-65535]: " SOCKS5_PORT
-  SOCKS5_PORT=${SOCKS5_PORT:-25432}
-  read -p "Nhập USERNAME cho proxy [user123]: " SOCKS5_USER
-  SOCKS5_USER=${SOCKS5_USER:-user123}
-  read -p "Nhập PASSWORD cho proxy [Dian@123]: " SOCKS5_PASS
-  SOCKS5_PASS=${SOCKS5_PASS:-Dian@123}
+  SOCKS5_PORT=${SOCKS5_PORT:-1099}
+  read -p "Nhập USERNAME cho proxy [mrmeo2025]: " SOCKS5_USER
+  SOCKS5_USER=${SOCKS5_USER:-mrmeo2025}
+  read -p "Nhập PASSWORD cho proxy [pmbhgq844js78678bfjhfg]: " SOCKS5_PASS
+  SOCKS5_PASS=${SOCKS5_PASS:-pmbhgq844js78678bfjhfg}
 
   for ((i=1; i<=TOTAL; i++)); do
     PORTS+=("$SOCKS5_PORT")
@@ -57,73 +51,84 @@ else
   done
 fi
 
-# ====== MỞ FIREWALL ======
-PORT_LIST=$(printf "tcp:%s," "${PORTS[@]}")
-PORT_LIST=${PORT_LIST%,}
+# ==== NETWORK + FIREWALL ====
+NET_NAME="${BASE_NAME}-network"
+FIREWALL_NAME="${BASE_NAME}-allow-all"
 
-gcloud compute firewall-rules create "${BASE_NAME}-open-port-proxy" \
-  --allow="$PORT_LIST" \
-  --description="Allow SOCKS5 proxy ports" \
-  --direction=INGRESS \
-  --priority=1000 \
-  --source-ranges=0.0.0.0/0 \
-  --quiet || echo "⚠️ Firewall rule đã tồn tại"
+if ! gcloud compute networks describe "$NET_NAME" >/dev/null 2>&1; then
+  echo "🌐 Network $NET_NAME chưa có, đang tạo..."
+  gcloud compute networks create "$NET_NAME" --subnet-mode=auto --quiet
+else
+  echo "⚠️ Network $NET_NAME đã tồn tại, bỏ qua."
+fi
 
-# ====== TẠO VPS ======
-index=0
-create_vps_group() {
-  local COUNT=$1
-  local ZONE=$2
-  local LOC_NAME=$3
+if ! gcloud compute firewall-rules describe "$FIREWALL_NAME" >/dev/null 2>&1; then
+  echo "🛡️ Firewall rule $FIREWALL_NAME chưa có, đang tạo..."
+  gcloud compute firewall-rules create "$FIREWALL_NAME" \
+    --network="$NET_NAME" \
+    --allow=tcp,udp,icmp \
+    --direction=INGRESS \
+    --priority=1000 \
+    --source-ranges=0.0.0.0/0 \
+    --quiet
+else
+  echo "⚠️ Firewall rule $FIREWALL_NAME đã tồn tại, bỏ qua."
+fi
 
-  for ((i=1; i<=COUNT; i++)); do
-    index=$((index+1))
-    echo "===> Tạo VPS ${BASE_NAME}-${index} tại $ZONE ($LOC_NAME)"
-    gcloud compute instances create "${BASE_NAME}-${index}" \
-      --zone="$ZONE" \
-      --machine-type=e2-micro \
-      --image-project=ubuntu-os-cloud \
-      --image-family=ubuntu-minimal-2204-lts \
-      --boot-disk-size=10GB \
-      --boot-disk-type=pd-ssd \
-      --quiet
-  done
-  # Đợi tất cả lệnh nền hoàn tất
-  wait
-}
+while ! gcloud compute networks describe "$NET_NAME" --format="value(selfLink)" >/dev/null 2>&1; do
+  echo "⏳ Network $NET_NAME chưa ready, chờ 5s..."
+  sleep 5
+done
 
-[ $TOKYO -gt 0 ] && create_vps_group $TOKYO "asia-northeast1-c" "Tokyo"
-[ $OSAKA -gt 0 ] && create_vps_group $OSAKA "asia-northeast2-a" "Osaka"
-[ $SEOUL -gt 0 ] && create_vps_group $SEOUL "asia-northeast3-a" "Seoul"
-
-echo "⏳ Chờ 30s cho VPS boot..."
-sleep 30
-
-# Tạo SSH key nếu chưa có
+# ==== SSH KEY ====
 if [ ! -f ~/.ssh/google_compute_engine ]; then
     ssh-keygen -t rsa -b 4096 -f ~/.ssh/google_compute_engine -N ""
 fi
 
-# Add key vào Google Cloud OS Login nếu chưa tồn tại
 if ! gcloud compute os-login ssh-keys list --format="value(key)" | grep -q "$(cat ~/.ssh/google_compute_engine.pub)"; then
     gcloud compute os-login ssh-keys add --key-file ~/.ssh/google_compute_engine.pub
 fi
 
-# ====== CÀI SOCKS5 ======
-index=0
-install_socks5_group() {
+# ====== HÀM TẠO + CÀI SOCKS5 NGAY SAU KHI TẠO ======
+create_and_install_vps_group() {
   local COUNT=$1
   local ZONE=$2
-  local DNS_OPTION=$3
+  local PREFIX=$3
+  local DNS_OPTION=$4
+  local start_index=$5
 
   for ((i=1; i<=COUNT; i++)); do
-    index=$((index+1))
-    name="${BASE_NAME}-${index}"
-    port="${PORTS[$((index-1))]}"
-    user="${USERS[$((index-1))]}"
-    pass="${PASSES[$((index-1))]}"
+    idx=$((start_index + i))
+    name="${BASE_NAME}-${PREFIX}-${i}"
+    port="${PORTS[$((idx-1))]}"
+    user="${USERS[$((idx-1))]}"
+    pass="${PASSES[$((idx-1))]}"
 
-    echo "📦 Cài SOCKS5 trên $name ($ZONE, port: $port, user: $user)"
+    echo "🚀 Tạo VPS $name ($ZONE)"
+    gcloud compute instances create "$name" \
+      --zone="$ZONE" \
+      --machine-type="$MACHINE_TYPE" \
+      --image-family="$IMAGE_FAMILY" \
+      --image-project="$IMAGE_PROJECT" \
+      --boot-disk-size=10GB \
+      --network="$NET_NAME" \
+      --tags=socks5-proxy \
+      --quiet
+
+    echo "⏳ Kiểm tra SSH cho $name..."
+    IP=$(gcloud compute instances describe "$name" \
+          --zone "$ZONE" \
+          --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
+
+    for ((j=1; j<=30; j++)); do
+      if nc -z "$IP" 22 &>/dev/null; then
+        echo "✅ SSH OK trên $name ($IP)"
+        break
+      fi
+      sleep 2
+    done
+
+    echo "📦 Cài SOCKS5 trên $name (port: $port, user: $user)"
     gcloud compute ssh "$name" --zone="$ZONE" --command "
       wget -O install-socks5.sh https://raw.githubusercontent.com/chunglv79/proxy/main/install-socks5-random-ggc.sh &&
       chmod +x install-socks5.sh &&
@@ -132,29 +137,28 @@ install_socks5_group() {
   done
 }
 
-[ $TOKYO -gt 0 ] && install_socks5_group $TOKYO "asia-northeast1-c" 1
-[ $OSAKA -gt 0 ] && install_socks5_group $OSAKA "asia-northeast2-a" 1
-[ $SEOUL -gt 0 ] && install_socks5_group $SEOUL "asia-northeast3-a" 2
+# ====== BẮT ĐẦU TẠO + CÀI SOCKS5 ======
+echo "🚀 Bắt đầu tạo VPS và cài SOCKS5..."
+start=0
+[ $TOKYO -gt 0 ] && create_and_install_vps_group $TOKYO "asia-northeast1-c" "tokyo" 1 $start && start=$((start+TOKYO))
+[ $OSAKA -gt 0 ] && create_and_install_vps_group $OSAKA "asia-northeast2-a" "osaka" 1 $start && start=$((start+OSAKA))
+[ $SEOUL -gt 0 ] && create_and_install_vps_group $SEOUL "asia-northeast3-a" "seoul" 2 $start && start=$((start+SEOUL))
 
-# ====== IN DANH SÁCH PROXY ======
-echo ""
+echo "✅ Hoàn tất cài SOCKS5!"
+
+# ====== IN DANH SÁCH ======
 echo "================ SOCKS5 PROXY LIST ================"
-
-index=0
-for ((i=1; i<=TOTAL; i++)); do
-    index=$((index+1))
-
-    if [ $index -le $TOKYO ]; then
-        zone="asia-northeast1-c"
-    elif [ $index -le $((TOKYO+OSAKA)) ]; then
-        zone="asia-northeast2-a"
-    else
-        zone="asia-northeast3-a"
-    fi
-
-    ip=$(gcloud compute instances describe "${BASE_NAME}-${index}" \
-        --zone="$zone" \
-        --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
-
-    echo "${ip}:${PORTS[$((index-1))]}:${USERS[$((index-1))]}:${PASSES[$((index-1))]}"
+echo "================ Script by Mrmeo - 0974579468  ================"
+start=0
+for zone in "tokyo:$TOKYO:asia-northeast1-c" "osaka:$OSAKA:asia-northeast2-a" "seoul:$SEOUL:asia-northeast3-a"; do
+  IFS=":" read -r PREFIX COUNT ZONE <<< "$zone"
+  for ((i=1; i<=COUNT; i++)); do
+    idx=$((start + i))
+    name="${BASE_NAME}-${PREFIX}-${i}"
+    ip=$(gcloud compute instances describe "$name" --zone="$ZONE" --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
+    echo "$ip:${PORTS[$((idx-1))]}:${USERS[$((idx-1))]}:${PASSES[$((idx-1))]}"
+  done
+  start=$((start+COUNT))
 done
+echo "==================== Hoàn tất cài đặt  ==========================="
+echo "==================================================="
